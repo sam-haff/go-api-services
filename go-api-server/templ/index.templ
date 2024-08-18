@@ -1,0 +1,10 @@
+package main
+
+templ IndexPage(accessToken string, acquireTokenUrl string) {
+    <div> 
+        <h2>Current token: {accessToken}</h2> 
+        <a href={ templ.URL(acquireTokenUrl) }>
+            <button>Get token</button>
+        </a>
+    </div>
+}

@@ -1,0 +1,8 @@
+package main
+
+templ ApprovePage(name string, query string) {
+    <div> <h2> Hello { name } </h2> </div>
+    <a href={ templ.URL(query) }>
+        <button>approve {query} </button>
+    </a>
+}
