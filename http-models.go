@@ -1,4 +1,4 @@
-package main
+package goapp
 
 type AuthQuery struct {
 	Client_id     string `form:"client_id" json:"client_id"`

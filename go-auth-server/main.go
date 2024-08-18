@@ -100,6 +100,9 @@ func handleToken(ctx *gin.Context) {
 			credEls[0],
 		}
 		mongoClient.Database("go-api-app").Collection("tokens").InsertOne(context.TODO(), tokenEntry)
+
+		resp := TokenResponse
+		ctx.AsciiJSON(200)
 	}
 }
 
