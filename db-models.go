@@ -1,4 +1,4 @@
-package main
+package goapp
 
 type TokenEntryDb struct {
 	AccessToken  string `bson:"access_token"`
