@@ -24,6 +24,6 @@ type TokenRequestBody struct {
 
 type TokenResponse struct {
 	TokenType    string `form:"token_type" json:"token_type"`
-	AccessToken  string `form:"access_token json:"access_token"`
+	AccessToken  string `form:"access_token" json:"access_token"`
 	RefreshToken string `form:"refresh_token" json:"refresh_token"`
 }
