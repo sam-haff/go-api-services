@@ -166,7 +166,7 @@ func authHandler(ctx *gin.Context) {
 		redirQ.Add("state", q.State)
 		redirUrl.RawQuery = redirQ.Encode()
 
-		ctx.Redirect(http.StatusMovedPermanently, redirUrl.String())
+		ctx.Redirect(http.StatusFound, redirUrl.String())
 
 		return
 	}

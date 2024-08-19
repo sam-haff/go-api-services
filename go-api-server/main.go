@@ -21,6 +21,7 @@ var currentToken = "NONE"
 const authUrl = "http://localhost:9090/auth"
 const tokenUrl = "http://localhost:9090/token"
 const verifyUrl = "http://localhost:9090/verify"
+const addPersonUrl = "http://localhost:9092/addperson"
 
 const clientId = "oauth-client-1"
 const clientSecret = "oauth-client-secret-1"
@@ -56,7 +57,7 @@ func handleIndex(ctx *gin.Context) {
 	authUrlQ.Add("redirect_uri", redirectUri)
 	authUrlQ.Add("state", fmt.Sprintf("%v", state))
 	authUrl.RawQuery = authUrlQ.Encode()
-	IndexPage(currentToken, authUrl.String(), "/tryToken").Render(ctx.Request.Context(), ctx.Writer)
+	IndexPage(currentToken, authUrl.String(), "/tryToken", "/addperson").Render(ctx.Request.Context(), ctx.Writer)
 }
 func handleTryToken(ctx *gin.Context) {
 	client := http.Client{}
@@ -135,7 +136,55 @@ func handleCallback(ctx *gin.Context) {
 
 		currentToken = tokenResp.AccessToken
 
-		ctx.Redirect(http.StatusMovedPermanently, "/")
+		ctx.Redirect(http.StatusFound, "/")
+	}
+}
+
+type PersonEntry struct {
+	Name string `form:"name" json:"name"`
+	Age  int    `form:"age" json:"age"`
+}
+
+func handleAddPerson(ctx *gin.Context) {
+	var p PersonEntry
+	if ctx.ShouldBind(&p) == nil {
+		fmt.Printf("Content type %s \n", ctx.GetHeader("Content-Type"))
+
+		b, err := ioutil.ReadAll(ctx.Request.Body)
+		fmt.Printf("got req body %s", string(b))
+		jsonP, err := json.Marshal(&p)
+		fmt.Printf("Got person %s \n", jsonP)
+		if err != nil {
+			ctx.String(400, "Failed to construct a json")
+		}
+
+		var client http.Client
+
+		req, err := http.NewRequest("POST", addPersonUrl, bytes.NewBuffer(jsonP))
+		req.Header.Add("Authorization", "Bearer "+currentToken)
+		req.Header.Add("Content-Type", "application/json")
+
+		if err != nil {
+			ctx.String(400, "Failed to construct request")
+			return
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			ctx.String(400, "Failed to send request")
+			return
+		}
+
+		if resp.StatusCode >= 300 {
+			ctx.String(resp.StatusCode, "Failed to action a 3rd party service")
+			return
+		}
+		ctx.Redirect(http.StatusFound, "/")
+		//	ctx.String(resp.StatusCode, "Success")
+
+	} else {
+		fmt.Printf("Failed to bind input \n")
+		ctx.String(400, "Failed to bind input")
 	}
 }
 
@@ -144,5 +193,6 @@ func main() {
 	g.GET("/", handleIndex)
 	g.GET("/callback", handleCallback)
 	g.GET("/tryToken", handleTryToken)
+	g.POST("/addperson", handleAddPerson)
 	g.Run(":9091")
 }

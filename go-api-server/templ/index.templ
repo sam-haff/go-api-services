@@ -1,6 +1,6 @@
 package main
 
-templ IndexPage(accessToken string, acquireTokenUrl string, tryTokenUrl string) {
+templ IndexPage(accessToken string, acquireTokenUrl string, tryTokenUrl string, addPersonUrl string) {
     <div> 
         <h2>Current token: {accessToken}</h2> 
         <a href={ templ.URL(acquireTokenUrl) }>
@@ -9,5 +9,12 @@ templ IndexPage(accessToken string, acquireTokenUrl string, tryTokenUrl string) 
         <a href={ templ.URL(tryTokenUrl) }>
             <button>Try token</button>
         </a>
+        <form action={ templ.URL(addPersonUrl) } method="POST">
+            <label for="in_name">name</label>
+            <input id="in_name" type="text" name="name">
+            <label for="in_age">age</label>
+            <input id="in_age" type="number" name="age">
+            <input type="submit" value="Add person(needs auth token)">
+        </form>
     </div>
 }
