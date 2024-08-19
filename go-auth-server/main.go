@@ -14,11 +14,18 @@ import (
 	uniuri "github.com/dchest/uniuri"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	goapp "github.com/sam-haff/go-api-services/go-api-shared"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+const tokenLen = 10
+
 var mongoClient *mongo.Client
+
+const mongoDBName = "go-api-app"
+const mongoDBTokensCollection = "tokens"
 
 type OauthClient struct {
 	Client_id     string
@@ -71,43 +78,66 @@ func handleToken(ctx *gin.Context) {
 	clientSecret := credEls[1]
 	client := retrieveClient(clientID)
 	if client == nil {
+		fmt.Printf("Uknown client \n")
 		ctx.String(401, "Uknown client")
 		return
 	}
 	if client.Client_secret != clientSecret {
+		fmt.Printf("Invalid creds \n")
 		ctx.String(401, "Invalid client creds")
 		return
 	}
-	var reqBody TokenRequestBody
+	var reqBody goapp.TokenRequestBody
 	if ctx.ShouldBind(&reqBody) == nil {
 		fmt.Printf("Got auth code: %s \n", reqBody.Code)
 		fmt.Printf("%s \n", reqBody.GrantType)
 
 		if reqBody.GrantType != "authorization_code" {
+			fmt.Printf("Unsupported grant \n")
 			ctx.String(401, "Unsupported grant type")
 			return
 		}
 
-		_, ok := codes[reqBody.Code]
+		cd, ok := codes[reqBody.Code]
 		if !ok {
+
+			fmt.Printf("Unsupported code %s\n", cd.ClientId)
 			ctx.String(401, "Unrecognized code")
+
+			return
 		}
 
-		token := uniuri.NewLen(10)
-		tokenEntry := TokenEntryDb{
+		token := uniuri.NewLen(tokenLen)
+		fmt.Printf("Generated token %s", token)
+
+		tokenEntry := goapp.TokenEntryDb{
 			token,
 			"",
 			credEls[0],
 		}
-		mongoClient.Database("go-api-app").Collection("tokens").InsertOne(context.TODO(), tokenEntry)
 
-		resp := TokenResponse
-		ctx.AsciiJSON(200)
+		fmt.Printf("Inserting token...")
+		mongoClient.Database(mongoDBName).Collection(mongoDBTokensCollection).InsertOne(context.TODO(), tokenEntry)
+
+		resp := goapp.TokenResponse{"Bearer",
+			token,
+			""}
+
+		fmt.Printf("Sending token...")
+		ctx.AsciiJSON(200, resp)
+
+		return
 	}
+	ctx.String(401, "Invalid body format")
 }
+func checkMapHandler(ctx *gin.Context) {
+	fmt.Printf("resulting map %v", codes)
 
+}
 func authHandler(ctx *gin.Context) {
-	q := AuthQuery{}
+	fmt.Printf("Auth begins... \n")
+
+	q := goapp.AuthQuery{}
 	if ctx.ShouldBindQuery(&q) == nil {
 		client := retrieveClient(q.Client_id)
 
@@ -121,9 +151,11 @@ func authHandler(ctx *gin.Context) {
 		if q.Response_type != "code" {
 			ctx.String(401, "Unsupported resp type")
 		}
-
 		code := uniuri.NewLen(8)
 		codes[code] = CodeRecord{q.Client_id}
+
+		fmt.Printf("generated code %s \n")
+		fmt.Printf("resulting map %v", codes)
 
 		redirUrl, _ := url.Parse("/approve")
 		redirQ := redirUrl.Query()
@@ -143,7 +175,7 @@ func authHandler(ctx *gin.Context) {
 }
 
 func approveHandler(ctx *gin.Context) {
-	var q ApproveRedirQuery = ApproveRedirQuery{}
+	var q goapp.ApproveRedirQuery = goapp.ApproveRedirQuery{}
 
 	if ctx.ShouldBindQuery(&q) == nil {
 		callbackUrl, _ := url.Parse(q.Redirect_uri)
@@ -160,6 +192,35 @@ func approveHandler(ctx *gin.Context) {
 	ctx.String(400, "Fail")
 }
 
+func extractTokenFromAuthHeader(auth string) (string, bool) {
+	if !strings.Contains(auth, "Bearer ") {
+		return "", false
+	}
+	token := auth[len("Bearer "):]
+	if len(token) != tokenLen {
+		return "", false
+	}
+	return token, true
+}
+
+func verifyTokenHandler(ctx *gin.Context) {
+	token, ok := extractTokenFromAuthHeader(ctx.GetHeader("Authorization"))
+
+	if !ok {
+		ctx.String(401, "Invalid token format")
+		return
+	}
+	filter := bson.D{{"access_token", token}}
+	foundToken := goapp.TokenEntryDb{}
+	err := mongoClient.Database(mongoDBName).Collection(mongoDBTokensCollection).FindOne(context.TODO(), filter).Decode(&foundToken)
+	if err != nil {
+		ctx.String(404, "Unauthorized")
+		return
+	}
+
+	ctx.String(201, "Authorized")
+}
+
 func main() {
 	err := godotenv.Load()
 	if err != nil {
@@ -167,8 +228,13 @@ func main() {
 		return
 	}
 
-	mongoConnectionUri := os.Getenv("MONGODB_CONNECTION_URI")
+	mongoConnectionUri := os.Getenv("MONGODB_CONNECTION_URL")
 	mongoClient, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(mongoConnectionUri))
+	if err != nil {
+		fmt.Printf("conn uri: %s", mongoConnectionUri)
+		fmt.Printf("Failed to conenct to mongodb, err: %s\n", err.Error())
+		return
+	}
 
 	f, err := os.OpenFile("testlogfile", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
@@ -183,5 +249,7 @@ func main() {
 	g.GET("/auth", authHandler)
 	g.GET("/approve", approveHandler)
 	g.POST("/token", handleToken)
+	g.POST("/verify", verifyTokenHandler)
+	g.GET("/map", checkMapHandler)
 	g.Run(":9090")
 }

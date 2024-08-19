@@ -1,4 +1,4 @@
-module go-api-server
+module github.com/sam-haff/go-api-services/go-api-server
 
 go 1.22.2
 
@@ -34,6 +34,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/natefinch/atomic v1.0.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
+	github.com/sam-haff/go-api-services/go-api-shared v0.0.0-20240818231831-55d401e45503 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/segmentio/encoding v0.4.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect

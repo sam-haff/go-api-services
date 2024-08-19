@@ -61,6 +61,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/sam-haff/go-api-services v0.0.0-20240818211948-85ab86c2f639 h1:mmRy+FQ/zkcj9oTO1IV6KSiJUP+rcQ2qtnJU5EtIeeE=
 github.com/sam-haff/go-api-services v0.0.0-20240818211948-85ab86c2f639/go.mod h1:29tiGPRbb6P7kqjXhtrRxAHyd02pGrH9ZutTm+4oIyo=
+github.com/sam-haff/go-api-services/go-api-shared v0.0.0-20240818231831-55d401e45503 h1:SHz7LvRdrOI5MJFSdAInPqiAnS3hW6kSWk9ow/roF4Q=
+github.com/sam-haff/go-api-services/go-api-shared v0.0.0-20240818231831-55d401e45503/go.mod h1:zTM0gpShGpyfoR6oG8M5JAWNQsAUq5+syjjfWYcSc4E=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
 github.com/stretchr/objx v0.5.0/go.mod h1:Yh+to48EsGEfYuaHDzXPcE3xhTkx73EhmCGUpEOglKo=
