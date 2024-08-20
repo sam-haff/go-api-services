@@ -13,7 +13,19 @@ import (
 
 const entriesFolder = "entries"
 
-const authVerifyTokenUrl = "http://127.0.0.1:9090/verify"
+func getAuthServerUrl() string {
+	const authServerUrlEnv = "AUTH_SERVER_URL"
+	serverUrl := os.Getenv(authServerUrlEnv)
+	if len(serverUrl) > 0 {
+		return serverUrl
+	}
+
+	return "127.0.0.1:9090"
+}
+
+var authServerUrl = "http://" + getAuthServerUrl()
+
+var authVerifyTokenUrl = authServerUrl + "/verify"
 
 // it's meant to be a foreign service(aka third party), so it's not put into shared module
 type PersonEntry struct {

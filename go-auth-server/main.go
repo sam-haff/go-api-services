@@ -33,11 +33,28 @@ type OauthClient struct {
 	Redirect_uri  string
 }
 
+func printEnvVarNotFound(n string) {
+	fmt.Printf("Env var %s not found \n", n)
+}
+
+func getClientServerUrl() string {
+	const clientServerUrlEnv = "CLIENT_SERVER_URL"
+	serverUrl := os.Getenv(clientServerUrlEnv)
+	if len(serverUrl) > 0 {
+		return serverUrl
+	}
+
+	printEnvVarNotFound(clientServerUrlEnv)
+	return "127.0.0.1:9091"
+}
+
+var clientServerUrl = "http://" + getClientServerUrl()
+
 var clients = []OauthClient{
 	{
 		Client_id:     "oauth-client-1",
 		Client_secret: "oauth-client-secret-1",
-		Redirect_uri:  "http://localhost:9091/callback",
+		Redirect_uri:  clientServerUrl + "/callback",
 	},
 }
 
@@ -117,7 +134,12 @@ func handleToken(ctx *gin.Context) {
 		}
 
 		fmt.Printf("Inserting token...")
-		mongoClient.Database(mongoDBName).Collection(mongoDBTokensCollection).InsertOne(context.TODO(), tokenEntry)
+		_, err := mongoClient.Database(mongoDBName).Collection(mongoDBTokensCollection).InsertOne(context.TODO(), tokenEntry)
+		if err != nil {
+			fmt.Printf("Failed to write token to db, with %s\n", err.Error())
+			ctx.String(401, "Failed to write token to database, with %s", err.Error())
+			return
+		}
 
 		resp := goapp.TokenResponse{"Bearer",
 			token,
@@ -146,6 +168,7 @@ func authHandler(ctx *gin.Context) {
 			return
 		}
 		if client.Redirect_uri != q.Redirect_uri {
+			fmt.Printf("Uris don't match, expected: %s, got:%s \n", client.Redirect_uri, q.Redirect_uri)
 			ctx.String(401, "Uris dont match")
 		}
 		if q.Response_type != "code" {
@@ -210,7 +233,11 @@ func verifyTokenHandler(ctx *gin.Context) {
 		ctx.String(401, "Invalid token format")
 		return
 	}
+
 	filter := bson.D{{"access_token", token}}
+	fmt.Printf("Got auth header: %s", ctx.GetHeader("Authorization"))
+	fmt.Printf("Got token %s \n", token)
+
 	foundToken := goapp.TokenEntryDb{}
 	err := mongoClient.Database(mongoDBName).Collection(mongoDBTokensCollection).FindOne(context.TODO(), filter).Decode(&foundToken)
 	if err != nil {

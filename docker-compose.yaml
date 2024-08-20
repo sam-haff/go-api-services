@@ -1,0 +1,19 @@
+services:
+  go-api-server:
+    build: ./go-api-server/.
+    ports:
+      - 9091:9091
+    env_file:
+      - ./go-api-server/dev.env
+  go-auth-server:
+    build: ./go-auth-server/.
+    ports:
+      - 9090:9090
+    env_file:
+      - ./go-auth-server/dev.env
+  go-foreign-api:
+    build: ./go-foreign-api/.
+    ports:
+      - 9092:9092
+    env_file:
+      - ./go-foreign-api/dev.env

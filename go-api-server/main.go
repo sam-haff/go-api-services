@@ -10,6 +10,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-querystring/query"
@@ -18,14 +20,78 @@ import (
 
 var currentToken = "NONE"
 
-const authUrl = "http://localhost:9090/auth"
-const tokenUrl = "http://localhost:9090/token"
-const verifyUrl = "http://localhost:9090/verify"
-const addPersonUrl = "http://localhost:9092/addperson"
+func printEnvVarNotFound(n string) {
+	fmt.Printf("Env var %s not found \n", n)
+}
+
+const authServerUrlEnv = "AUTH_SERVER_URL"
+
+func getAuthServerUrl() string {
+	authUrl := os.Getenv(authServerUrlEnv)
+	if len(authUrl) != 0 {
+		return authUrl
+	}
+
+	printEnvVarNotFound(authServerUrlEnv)
+	return "127.0.0.1:9090"
+}
+func getAuthServerExternalUrl() string {
+	var authUrl = getAuthServerUrl()
+
+	if strings.Contains(authUrl, "host.docker.internal") {
+		return "127.0.0.1:9090"
+	}
+
+	return authUrl
+}
+
+func getForeignApiUrl() string {
+	const foreignApiUrlEnv = "FOREIGN_API_URL"
+	authUrl := os.Getenv(foreignApiUrlEnv)
+	if len(authUrl) != 0 {
+
+		return authUrl
+	}
+
+	printEnvVarNotFound(foreignApiUrlEnv)
+	return "127.0.0.1:9092"
+}
+func getClientServerUrl() string {
+	const foreignApiUrlEnv = "CLIENT_SERVER_URL"
+	authUrl := os.Getenv(foreignApiUrlEnv)
+	if len(authUrl) != 0 {
+		return authUrl
+	}
+
+	printEnvVarNotFound(foreignApiUrlEnv)
+	return "127.0.0.1:9091"
+}
+func getClientServerExternalUrl() string {
+	var serverUrl = getClientServerUrl()
+
+	if strings.Contains(serverUrl, "host.docker.internal") {
+		return "127.0.0.1:9091"
+	}
+
+	return serverUrl
+}
+
+var authServerUrl = "http://" + getAuthServerUrl()
+var authServerExternalUrl = "http://" + getAuthServerExternalUrl() // url that is accessible from browser, replaces docker.host.internal by localhost
+var foreignApiUrl = "http://" + getForeignApiUrl()
+var clientServerUrl = "http://" + getClientServerUrl()
+var clientServerExternalUrl = "http://" + getClientServerExternalUrl()
+
+var authUrl = authServerExternalUrl + "/auth"
+
+var tokenUrl = authServerUrl + "/token"
+var verifyUrl = authServerUrl + "/verify"
+var addPersonUrl = foreignApiUrl + "/addperson"
 
 const clientId = "oauth-client-1"
 const clientSecret = "oauth-client-secret-1"
-const redirectUri = "http://localhost:9091/callback"
+
+var redirectUri = clientServerExternalUrl + "/callback"
 
 var state string = "0"
 
@@ -66,9 +132,10 @@ func handleTryToken(ctx *gin.Context) {
 	req.Header.Add("Authorization", "Bearer "+currentToken)
 
 	resp, err := client.Do(req)
-
+	fmt.Printf("Verify url: %s \n", verifyUrl)
 	if err != nil {
-		ctx.String(401, "Failed to send code back to the server")
+		fmt.Printf("Failed to send code back with err %s \n", err.Error())
+		ctx.String(401, fmt.Sprintf("Failed to send code back to the server. %s", err.Error()))
 		return
 	}
 	b, err := ioutil.ReadAll(resp.Body)
@@ -118,7 +185,8 @@ func handleCallback(ctx *gin.Context) {
 		resp, err := client.Do(req)
 
 		if err != nil {
-			ctx.String(401, "Failed to send code back to the server")
+			fmt.Printf("tries to send code to %s", tokenUrl)
+			ctx.String(401, "Failed to send code back to the server, with %s", err.Error())
 			return
 		}
 		var tokenResp goapp.TokenResponse
