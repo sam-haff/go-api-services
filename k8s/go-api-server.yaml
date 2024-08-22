@@ -1,0 +1,37 @@
+# its actually a client, bad naming
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-api-server-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      go-app: api-server
+  template:
+    metadata:
+      labels:
+        go-app: api-server
+    spec:
+      containers:
+        - name: go-api-server-cont
+          image: wonesir/k8s-demo-goapp-api-server
+          envFrom:
+            - configMapRef:
+                name: client-server-env
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: go-api-service
+spec:
+  selector:
+    go-app: api-server
+  type: LoadBalancer
+  ports:
+    - protocol: "TCP" 
+      port: 9091
+      targetPort: 9091

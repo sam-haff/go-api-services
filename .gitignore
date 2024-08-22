@@ -1,6 +1,6 @@
 ./go-foreign-api/entries
 *.sum
-go-api-server.*
-go-auth-server.*
-go-foreign-api.*
-**/*.env
+go-api-server.exe
+go-auth-server.exe
+go-foreign-api.exe
+**/*secret*.env

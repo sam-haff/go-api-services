@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-foreign-api-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      go-app: foreign-api
+  template:
+    metadata:
+      labels:
+        go-app: foreign-api
+    spec:
+      containers:
+        - name: go-foreign-api-cont
+          image: wonesir/k8s-demo-goapp-foreign-api
+          envFrom:
+            - configMapRef:
+                name: foreign-api-env
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: go-foreign-service
+spec:
+  selector:
+    go-app: foreign-api
+  type: LoadBalancer
+  ports:
+    - protocol: "TCP" 
+      port: 9092
+      targetPort: 9092

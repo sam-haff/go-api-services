@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-auth-server-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      go-app: auth-server
+  template:
+    metadata:
+      labels:
+        go-app: auth-server
+    spec:
+      containers:
+        - name: go-auth-server-cont
+          image: wonesir/k8s-demo-goapp-auth-server
+          envFrom:
+            - configMapRef:
+                name: auth-server-env
+            - secretRef:
+                name: auth-server-secret
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: go-auth-service
+spec:
+  selector:
+    go-app: auth-server
+  type: LoadBalancer
+  #Node is for minikube stable port exposition, should be LoadBalancer in prod
+  ports:
+    - protocol: "TCP" 
+      port: 9090
+      targetPort: 9090

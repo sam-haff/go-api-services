@@ -251,8 +251,8 @@ func verifyTokenHandler(ctx *gin.Context) {
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Printf("Critical. Failed to load env var.")
-		return
+		fmt.Printf("Critical. Failed to load env var. With error %s \n", err.Error())
+		//return
 	}
 
 	mongoConnectionUri := os.Getenv("MONGODB_CONNECTION_URL")

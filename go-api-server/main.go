@@ -38,7 +38,7 @@ func getAuthServerUrl() string {
 func getAuthServerExternalUrl() string {
 	var authUrl = getAuthServerUrl()
 
-	if strings.Contains(authUrl, "host.docker.internal") {
+	if strings.Contains(authUrl, "host.docker.internal") || !strings.Contains(authUrl, ".") {
 		return "127.0.0.1:9090"
 	}
 
@@ -69,7 +69,7 @@ func getClientServerUrl() string {
 func getClientServerExternalUrl() string {
 	var serverUrl = getClientServerUrl()
 
-	if strings.Contains(serverUrl, "host.docker.internal") {
+	if strings.Contains(serverUrl, "host.docker.internal") || !strings.Contains(serverUrl, ".") {
 		return "127.0.0.1:9091"
 	}
 
@@ -194,7 +194,7 @@ func handleCallback(ctx *gin.Context) {
 		b, err := ioutil.ReadAll(resp.Body)
 		err = json.Unmarshal(b, &tokenResp)
 		if resp.StatusCode >= 300 {
-			ctx.String(401, "Token request failed")
+			ctx.String(401, "Token request failed, with content %s", string(b))
 			return
 		}
 		if err != nil {
